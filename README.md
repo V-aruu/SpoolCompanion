@@ -9,8 +9,6 @@ Combined with [nfc2klipper](https://github.com/bofh69/nfc2klipper) it allows you
 
 <img src="docs/images/showcase.png" alt="Screen Spool List" height="800"/>
 
-<br/>
-
 I made this app because I was tired of having to go to the printer NFC reader/writer to enroll new tags in my collection.
 
 This app lets you simply choose a spool - from your [Spoolman](https://github.com/Donkie/Spoolman) database - and write the associated NFC tag. 
