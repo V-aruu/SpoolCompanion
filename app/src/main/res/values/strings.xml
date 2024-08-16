@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SpoolCompanion</string>
+    <string name="title_activity_main">SpoolCompanion</string>
+    <string name="loading">Loading…</string>
+    <string name="loading_failed">Failed to load spools, check internet connection (or Spoolman\'s URL)</string>
+    <string name="nfc_error">This device does not support NFC</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="top_app_bar">Select spool:</string>
+    <string name="no_url_error">Please set Spoolman\'s URL in the settings dialog</string>
+</resources>
