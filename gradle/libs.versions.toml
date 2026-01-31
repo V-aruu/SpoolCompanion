@@ -1,5 +1,6 @@
 [versions]
 agp = "9.0.0"
+composeBomVersion = "<version>"
 datastorePreferences = "1.2.0"
 kotlin = "2.2.10"
 coreKtx = "1.17.0"

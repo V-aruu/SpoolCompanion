@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,7 +69,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
-                            imageVector = Icons.Filled.Settings,
+                            painter = painterResource(id = R.drawable.settings),
                             contentDescription = "Settings"
                         )
                     }
@@ -124,7 +122,11 @@ fun SettingsDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             Button(
-                onClick = { onConfirm() })
+                onClick = {
+                    val cleaned = (spoolmanUrl.value ?: "").trim().removeSuffix("/")
+                    spoolmanUrl.value = cleaned
+                    onConfirm()
+                })
             {
                 Text(text = "OK")
             }
@@ -188,9 +190,8 @@ fun NoUrlApp() {
         Icon(
             modifier = Modifier
                 .size(128.dp),
-            imageVector = Icons.Filled.Settings,
-            contentDescription = "No url for spoolman",
-            tint = MaterialTheme.colorScheme.inversePrimary
+            painter = painterResource(id = R.drawable.settings),
+            contentDescription = "No url for spoolman"
         )
         Text(
             text = stringResource(R.string.no_url_error),
