@@ -1,6 +1,7 @@
 # Gradle files
 .gradle/
 build/
+gradle
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -48,5 +49,5 @@ google-services.json
 .cxx
 
 # Project specifics
-screen_record.mp4
+screen_record*.mp4
 showcase.xcf

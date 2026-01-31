@@ -11,6 +11,7 @@ import com.hexxotest.spoolcompanion.models.SpoolListEntry
 import com.hexxotest.spoolcompanion.network.SpoolApi
 import kotlinx.coroutines.launch
 import java.io.IOException
+import androidx.core.graphics.toColorInt
 
 class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
 
@@ -40,7 +41,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         filamentId = spool.filament.id,
                         vendorName = spool.filament.vendor.name,
                         name = spool.filament.name,
-                        color = Color(android.graphics.Color.parseColor("#${spool.filament.color_hex}")),
+                        color = Color("#${spool.filament.color_hex}".toColorInt()),
                         material = spool.filament.material,
                         weight = convertWeightDoubleToString(spool.filament.weight),
                         diameter = spool.filament.diameter,
