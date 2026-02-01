@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.hexxotest.spoolcompanion.models.SpoolListEntry
 import com.hexxotest.spoolcompanion.network.SpoolApi
@@ -71,6 +72,15 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
             "${weightStr.substring(0, weightStr.length - 2)} $unit"
         } else {
             "$weightStr $unit"
+        }
+    }
+
+    companion object {
+        fun provideFactory(spoolmanUrl: String): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SpoolViewModel(spoolmanUrl) as T
+            }
         }
     }
 }

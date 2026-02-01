@@ -54,8 +54,6 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
     val spoolmanUrlFromPrefs = sharedPrefs.getString("spoolman_url", "")
     val spoolmanUrl = remember { mutableStateOf(spoolmanUrlFromPrefs) }
 
-    var spoolViewModel: SpoolViewModel? = null
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -83,9 +81,12 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             if (spoolmanUrlFromPrefs.toString().isNotEmpty()) {
-                spoolViewModel = spoolViewModel ?: SpoolViewModel(spoolmanUrlFromPrefs.toString())
+                val spoolViewModel: SpoolViewModel = viewModel(
+                    key = spoolmanUrlFromPrefs,
+                    factory = SpoolViewModel.provideFactory(spoolmanUrlFromPrefs.toString())
+                )
                 HomeScreen(
-                    uiState = spoolViewModel!!.currentUiState,
+                    uiState = spoolViewModel.currentUiState,
                     nfcTagViewModel = nfcTagViewModel
                 )
             } else {
