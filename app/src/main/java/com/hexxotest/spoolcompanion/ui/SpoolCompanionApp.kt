@@ -60,7 +60,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
             TopAppBar(
                 colors = topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
                 ),
                 title = {
                     Text(stringResource(id = R.string.top_app_bar))
@@ -70,7 +70,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_settings),
                             contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

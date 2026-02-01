@@ -19,9 +19,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.ui.res.colorResource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -116,15 +121,29 @@ fun SpoolEntry(
     modifier: Modifier = Modifier,
     nfcTagViewModel: NfcTagViewModel
 ) {
-    ElevatedCard(
+    // Use a lighter gray shadow in dark mode so it stands out on the dark background
+    val shadowColor = if (isSystemInDarkTheme()) Color(0xFF555555) else DefaultShadowColor
+    OutlinedCard(
         onClick = {
             nfcTagViewModel.isDialogShown = true
             nfcTagViewModel.spoolId = spool.id
             nfcTagViewModel.filamentId = spool.filamentId
         },
+        // Use a dedicated gray background for the card container
+        // Use gray_800 only for dark theme; keep default surface for light theme
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (isSystemInDarkTheme())
+                colorResource(id = R.color.gray_800)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, shape = MaterialTheme.shapes.small),
+            .shadow(
+                elevation = 4.dp,
+                shape = MaterialTheme.shapes.small,
+                ambientColor = shadowColor,
+                spotColor = shadowColor),
         shape = MaterialTheme.shapes.small,
     ) {
         Row(
@@ -132,11 +151,12 @@ fun SpoolEntry(
             modifier = modifier
                 .padding(12.dp)
         ) {
+            val borderColor = spool.color.subtleBorderVariant()
             Box(
                 modifier = modifier
                     .size(24.dp)
                     .background(spool.color)
-                    .border(1.dp, Color.Black)
+                    .border(1.dp, borderColor)
             )
             Column(
                 modifier = Modifier
@@ -205,7 +225,7 @@ fun WriteNfcDialog(
                             .size(128.dp),
                         painter = painterResource(id = R.drawable.ic_contactless_filled),
                         contentDescription = "NFC",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.inversePrimary)
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                     )
                     Text(
                         text = "Approach an NFC tag...",

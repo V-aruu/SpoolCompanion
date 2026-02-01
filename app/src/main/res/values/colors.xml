@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <!-- Primary orange/pumpkin palette -->
+    <color name="orange_200">#FFFFCC80</color> <!-- lighter orange -->
+    <color name="orange_500">#FFFF9800</color> <!-- main orange -->
+    <color name="orange_700">#FFF57C00</color> <!-- darker orange -->
+    <!-- Accent amber colors -->
+    <color name="amber_200">#FFFFE082</color>
+    <color name="amber_500">#FFFFC107</color>
+    <color name="amber_700">#FFFFA000</color>
+    <!-- Core neutrals -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="gray_900">#FF212121</color>
+    <color name="gray_800">#FF303030</color> <!-- adjusted darker grey for card container -->
+    <color name="gray_100">#FFF5F5F5</color>
 </resources>

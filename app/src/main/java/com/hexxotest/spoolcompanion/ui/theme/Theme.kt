@@ -104,17 +104,16 @@ fun SpoolCompanionTheme(
     content: @Composable () -> Unit
 ) {
 
-    val colorScheme = lightScheme
-
-//    val colorScheme = when {
-//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//            val context = LocalContext.current
-//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//        }
-//
-//        darkTheme -> darkScheme
-//        else -> lightScheme
-//    }
+    // Choose the appropriate color scheme based on system dark mode.
+    val colorScheme = when {
+        // Dynamic color support is optional – keep the existing logic commented for future use.
+        // dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        //     val context = LocalContext.current
+        //     if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        // }
+        darkTheme -> darkScheme
+        else -> lightScheme
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,

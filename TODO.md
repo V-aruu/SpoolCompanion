@@ -4,7 +4,7 @@
  - [ ] Implement an app icon
  - [x] When no URL is present, the UI shows a page with the settings cog icon. It is in black color -> Fix it to be a theme color
  - [x] Same for the upper icon on main screen
- - [ ] Implement a better UI theme + Dark and Light variants
+ - [x] Implement a better UI theme + Dark and Light variants
  - [ ] Show animation when tag is written
  
 ## ISSUES
