@@ -1,6 +1,7 @@
 package com.hexxotest.spoolcompanion.ui
 
 import android.content.Context
+import android.graphics.Color
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -67,8 +68,9 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
-                            painter = painterResource(id = R.drawable.settings),
-                            contentDescription = "Settings"
+                            painter = painterResource(id = R.drawable.ic_settings),
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -191,8 +193,9 @@ fun NoUrlApp() {
         Icon(
             modifier = Modifier
                 .size(128.dp),
-            painter = painterResource(id = R.drawable.settings),
-            contentDescription = "No url for spoolman"
+            painter = painterResource(id = R.drawable.ic_settings_filled),
+            contentDescription = "No url for spoolman",
+            tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = stringResource(R.string.no_url_error),
@@ -203,7 +206,7 @@ fun NoUrlApp() {
     }
 }
 
-@Preview(showBackground = true, device = Devices.PIXEL_7A)
+@Preview(showBackground = true, device = Devices.PIXEL_8)
 @Composable
 fun DefaultPreview() {
     NoUrlApp()

@@ -203,7 +203,7 @@ fun WriteNfcDialog(
                     Image(
                         modifier = Modifier
                             .size(128.dp),
-                        painter = painterResource(id = R.drawable.ic_contactless),
+                        painter = painterResource(id = R.drawable.ic_contactless_filled),
                         contentDescription = "NFC",
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.inversePrimary)
                     )

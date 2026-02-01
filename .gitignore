@@ -50,4 +50,7 @@ google-services.json
 
 # Project specifics
 screen_record*.mp4
-showcase.xcf
+*.xcf
+SUMMARY.md
+AGENTS.md
+CLAUDE.md

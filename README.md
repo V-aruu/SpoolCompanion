@@ -23,8 +23,3 @@ I am a completely noob in Android app development, this was my first app using K
 > I haven't tested this app on several devices, and it is still an early development.
 > 
 > User shall use this app with caution, and at their own risks.
-
-## TODO
- - [ ] Handle a Spoolman property (like `tag_written`) to retrieve/record if this spool has a tag attached (and filter the list ?)
- - [ ] Implement a better UI theme + Dark and Light variants
- - [ ] Implement an app icon

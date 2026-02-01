@@ -69,7 +69,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
         // Return formatted string
         val weightStr: String = weightInfo.toString()
         return if (weightStr.contains(".0")) {
-            "${weightStr.substring(0, weightStr.length - 2)} $unit"
+            "${weightStr.dropLast(2)} $unit"
         } else {
             "$weightStr $unit"
         }
