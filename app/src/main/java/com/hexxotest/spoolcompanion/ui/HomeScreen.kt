@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -152,24 +153,37 @@ fun SpoolEntry(
                 .padding(12.dp)
         ) {
             val borderColor = spool.color.subtleBorderVariant()
-            // Show single color or multicolor filament side‑by‑side.
+            // Show single color or multicolor filament.
             if (spool.multiColors.isNotEmpty() && spool.multiColors.any { it != Color.Transparent }) {
+                val direction = spool.multiColorsDirection.trim().lowercase()
+                val isLongitudinal = direction == "longitudinal"
+
                 Box(
                     modifier = modifier
                         .size(24.dp)
                         .border(1.dp, borderColor)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .height(24.dp)
-                    ) {
-
-                        spool.multiColors.forEach { c ->
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp, 24.dp)
-                                    .background(c)
-                            )
+                    if (isLongitudinal) {
+                        // Longitudinal: top/bottom (stacked vertically).
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            spool.multiColors.forEach { c ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp, 12.dp)
+                                        .background(c)
+                                )
+                            }
+                        }
+                    } else {
+                        // Coaxial: left/right (side-by-side).
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            spool.multiColors.forEach { c ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp, 24.dp)
+                                        .background(c)
+                                )
+                            }
                         }
                     }
                 }
