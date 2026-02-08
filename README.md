@@ -26,13 +26,13 @@ And all this, from your mobile phone !
 <table>
   <tr>
     <td align="center" valign="top">
-      <img src="docs/images/main_screen.png" alt="Main screen - spool list" width="260"/>
+      <img src="docs/images/main_screen.png" alt="Main screen - spool list" width="480"/>
     </td>
     <td align="center" valign="top">
-      <img src="docs/images/write_dialog.png" alt="Write dialog" width="260"/>
+      <img src="docs/images/write_dialog.png" alt="Write dialog" width="480"/>
     </td>
     <td align="center" valign="top">
-      <img src="docs/images/read_dialog.png" alt="Read dialog" width="260"/>
+      <img src="docs/images/read_dialog.png" alt="Read dialog" width="480"/>
     </td>
   </tr>
   <tr>
