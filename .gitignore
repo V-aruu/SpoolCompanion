@@ -4,7 +4,9 @@ build/
 gradle
 
 # Local configuration file (sdk path, etc)
+keystore/
 local.properties
+keystore.properties
 
 # Log/OS Files
 *.log
