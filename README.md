@@ -1,4 +1,8 @@
 
+<p align="center">
+  <img src="app_logo/app_logo.png" alt="SpoolCompanion app icon" width="120"/>
+</p>
+
 # :iphone: Android App - Spoolman Companion
 
 An Android app that connects to a Spoolman server, lets you select a spool, and writes its identifiers to NFC/RFID tags.
