@@ -41,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -204,33 +205,37 @@ fun SpoolEntry(
                             .border(1.dp, borderColor)
                     )
                 }
-                Column(
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                ) {
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = "${spool.vendorName} - ${spool.name} " +
+                            "(${spool.material}, ${spool.diameter} mm, ${spool.weight})",
+                    // Keep the header on one line so the ID stays on the same row.
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (spool.comment.isNotEmpty()) {
                     Text(
-                        text = "${spool.vendorName} - ${spool.name} " +
-                                "(${spool.material}, ${spool.diameter} mm, ${spool.weight})",
+                        text = spool.comment,
+                        fontStyle = FontStyle.Italic,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
-                    if (spool.comment.isNotEmpty()) {
-                        Text(
-                            text = spool.comment,
-                            fontStyle = FontStyle.Italic,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
                 }
-                Spacer(modifier = Modifier.weight(1f))
+            }
                 // Subtle label color: blend text toward the card surface so it reads softly.
-                val filamentIdColor = lerp(
+                val spoolIdColor = lerp(
                     MaterialTheme.colorScheme.onSurfaceVariant,
                     MaterialTheme.colorScheme.surface,
                     0.7f
                 )
                 Text(
-                    text = "#${spool.filamentId}",
+                    // Show spool ID on the right for quick identification.
+                    text = "#${spool.id}",
                     fontStyle = FontStyle.Italic,
-                    color = filamentIdColor
+                    color = spoolIdColor
                 )
             }
             // Remaining filament indicator (percentage of initial/total weight).
