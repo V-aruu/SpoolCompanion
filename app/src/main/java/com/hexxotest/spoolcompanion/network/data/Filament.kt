@@ -2,6 +2,7 @@ package com.hexxotest.spoolcompanion.network.data
 
 import kotlinx.serialization.Serializable
 
+// Raw filament model from Spoolman; used to build UI-friendly entries.
 @Serializable
 data class Filament(
     val color_hex: String = "",

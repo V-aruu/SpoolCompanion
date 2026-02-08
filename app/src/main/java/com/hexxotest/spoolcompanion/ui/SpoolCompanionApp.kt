@@ -51,6 +51,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
 
     var showSettingsDialog by remember { mutableStateOf(false) }
 
+    // Persisted settings live in SharedPreferences for now (DataStore key exists but is unused).
     val sharedPrefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val spoolmanUrlFromPrefs = sharedPrefs.getString("spoolman_url", "")
     val spoolmanUrl = remember { mutableStateOf(spoolmanUrlFromPrefs) }
@@ -83,6 +84,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             if (spoolmanUrlFromPrefs.toString().isNotEmpty()) {
+                // Key the ViewModel by URL so changing the server creates a fresh instance.
                 val spoolViewModel: SpoolViewModel = viewModel(
                     key = spoolmanUrlFromPrefs,
                     factory = SpoolViewModel.provideFactory(spoolmanUrlFromPrefs.toString())
@@ -102,6 +104,7 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
             spoolmanUrl = spoolmanUrl,
             onDismiss = { showSettingsDialog = false },
             onConfirm = {
+                // Save the cleaned base URL; SpoolApi appends "/api/v1/".
                 sharedPrefs.edit {
                     putString("spoolman_url", spoolmanUrl.value)
                     apply()
@@ -126,6 +129,7 @@ fun SettingsDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    // Normalize user input to avoid trailing slashes in the base URL.
                     val cleaned = (spoolmanUrl.value ?: "").trim().removeSuffix("/")
                     spoolmanUrl.value = cleaned
                     onConfirm()

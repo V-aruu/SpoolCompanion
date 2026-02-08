@@ -2,6 +2,7 @@ package com.hexxotest.spoolcompanion.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// App color palette. Values are tuned to match Spoolman-like orange/amber accents.
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

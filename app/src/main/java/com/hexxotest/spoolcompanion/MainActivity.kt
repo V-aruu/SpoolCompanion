@@ -29,10 +29,12 @@ import com.hexxotest.spoolcompanion.ui.NoNfcApp
 import com.hexxotest.spoolcompanion.ui.SpoolCompanionApp
 import com.hexxotest.spoolcompanion.ui.theme.SpoolCompanionTheme
 
+// DataStore setup for future settings persistence (currently SharedPreferences is used in UI).
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class MainActivity : ComponentActivity() {
 
+    // Shared view-model holding the current NFC write selection + dialog state.
     private val nfcTagViewModel: NfcTagViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // NFC
+        // NFC adapter may be null on devices without NFC hardware.
         val nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 
         // Content handling
@@ -53,6 +55,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                 ) {
                     if (nfcAdapter == null) {
+                        // Fallback UI when NFC is not available on the device.
                         NoNfcApp()
                     } else {
                         SpoolCompanionApp(nfcTagViewModel)
@@ -71,6 +74,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         val nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         if (nfcAdapter != null) {
+            // Foreground dispatch keeps NFC intents routed to this activity while it's visible.
             val intent = Intent(this, javaClass).apply {
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
@@ -88,6 +92,7 @@ class MainActivity : ComponentActivity() {
         if (intent.action == NfcAdapter.ACTION_TAG_DISCOVERED ||
             intent.action == NfcAdapter.ACTION_NDEF_DISCOVERED
         ) {
+            // Only write when the user explicitly initiated the flow (dialog visible).
             val tag: Tag = IntentCompat.getParcelableExtra(
                 intent,
                 NfcAdapter.EXTRA_TAG,
@@ -98,6 +103,7 @@ class MainActivity : ComponentActivity() {
                     "NFC",
                     "SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId}"
                 )
+                // Payload format is a two-line text record consumed by the companion tool.
                 val msg = NdefMessage(
                     NdefRecord.createTextRecord(
                         null,
@@ -108,6 +114,7 @@ class MainActivity : ComponentActivity() {
                     it.connect()
                     it.writeNdefMessage(msg)
                 }
+                // Close dialog after a successful write.
                 nfcTagViewModel.isDialogShown = false
             }
         }

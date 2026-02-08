@@ -18,6 +18,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
 
     private val url = spoolmanUrl
 
+    // Simple UI state machine for the Home screen.
     sealed interface UiState {
         data class Success(val spools: List<SpoolListEntry>) : UiState
         data object Error : UiState
@@ -34,6 +35,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
     private fun getSpools() {
         viewModelScope.launch {
             currentUiState = try {
+                // Fetch raw Spoolman models and map them into a UI-friendly list entry.
                 val spoolApi = SpoolApi(baseUrl = url)
                 val spools = spoolApi.retrofitService.getSpoolList()
                 val entries = spools.map { spool ->
@@ -61,12 +63,14 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                 }
                 UiState.Success(entries)
             } catch (e: Exception) {
+                // Any failure (network, parsing, etc.) surfaces as a generic error state.
                 UiState.Error
             }
         }
     }
 
     private fun convertWeightDoubleToString(weight: Double): String {
+        // Spoolman returns weight in grams; format for UI with g/kg units.
         // Weight var
         var weightInfo: Double = weight
         // Define unit 'g' default, 'kg' if > 1000 g

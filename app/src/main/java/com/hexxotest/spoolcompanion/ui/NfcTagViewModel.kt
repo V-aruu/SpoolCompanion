@@ -8,10 +8,13 @@ import androidx.lifecycle.ViewModel
 
 class NfcTagViewModel : ViewModel() {
 
+    // Selected spool ID for the next NFC write. -1 indicates "none selected".
     var spoolId by mutableIntStateOf(-1)
 
+    // Selected filament ID for the next NFC write. -1 indicates "none selected".
     var filamentId by mutableIntStateOf(-1)
 
+    // Controls visibility of the "approach tag" dialog.
     var isDialogShown by mutableStateOf(false)
 
 }

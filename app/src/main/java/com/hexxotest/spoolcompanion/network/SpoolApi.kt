@@ -12,12 +12,15 @@ class SpoolApi(
 ) {
 
     interface SpoolApiService {
+        // Spoolman v1 endpoint: /api/v1/spool
         @GET("spool")
         suspend fun getSpoolList(): List<SpoolItem>
     }
 
+    // Ignore unknown keys to tolerate newer Spoolman fields without breaking parsing.
     private val json = Json { ignoreUnknownKeys = true }
 
+    // baseUrl is expected to be the server root (without trailing /api/v1).
     private val retrofit = Retrofit.Builder()
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .baseUrl("$baseUrl/api/v1/")

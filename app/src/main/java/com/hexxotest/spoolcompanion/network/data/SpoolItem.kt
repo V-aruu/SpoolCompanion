@@ -2,6 +2,7 @@ package com.hexxotest.spoolcompanion.network.data
 
 import kotlinx.serialization.Serializable
 
+// Raw Spoolman API model. Field names match JSON to avoid custom serializers.
 @Serializable
 data class SpoolItem(
     val archived: Boolean = false,

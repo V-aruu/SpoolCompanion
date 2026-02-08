@@ -57,6 +57,7 @@ fun HomeScreen(
 ) {
     when (uiState) {
         is SpoolViewModel.UiState.Success -> {
+            // NFC dialog is driven by shared view-model state so it can be dismissed after a write.
             if (nfcTagViewModel.isDialogShown) {
                 WriteNfcDialog(nfcTagViewModel)
             }
@@ -79,6 +80,7 @@ fun LoadingScreen() {
         modifier = Modifier
             .fillMaxSize()
     ) {
+        // Large spinner to signal network fetch in progress.
         CircularProgressIndicator(
             modifier = Modifier
                 .size(128.dp),
@@ -101,6 +103,7 @@ fun ErrorScreen() {
         modifier = Modifier
             .fillMaxSize()
     ) {
+        // Friendly error state for network/parse failures.
         Image(
             modifier = Modifier
                 .size(128.dp),
@@ -126,6 +129,7 @@ fun SpoolEntry(
     val shadowColor = if (isSystemInDarkTheme()) Color(0xFF555555) else DefaultShadowColor
     OutlinedCard(
         onClick = {
+            // Selection drives the NFC write flow (dialog + payload in MainActivity).
             nfcTagViewModel.isDialogShown = true
             nfcTagViewModel.spoolId = spool.id
             nfcTagViewModel.filamentId = spool.filamentId
@@ -152,9 +156,11 @@ fun SpoolEntry(
             modifier = modifier
                 .padding(12.dp)
         ) {
+            // Border color is derived from the primary filament color for subtle contrast.
             val borderColor = spool.color.subtleBorderVariant()
             // Show single color or multicolor filament.
             if (spool.multiColors.isNotEmpty() && spool.multiColors.any { it != Color.Transparent }) {
+                // Spoolman provides a direction hint for multi-color filaments.
                 val direction = spool.multiColorsDirection.trim().lowercase()
                 val isLongitudinal = direction == "longitudinal"
 
@@ -175,7 +181,7 @@ fun SpoolEntry(
                             }
                         }
                     } else {
-                        // Coaxial: left/right (side-by-side).
+                        // Coaxial (default): left/right (side-by-side).
                         Row(modifier = Modifier.fillMaxSize()) {
                             spool.multiColors.forEach { c ->
                                 Box(
@@ -223,6 +229,7 @@ fun SpoolList(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     nfcTagViewModel: NfcTagViewModel
 ) {
+    // Lazy list to efficiently handle large numbers of spools.
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -241,6 +248,7 @@ fun WriteNfcDialog(
     nfcTagViewModel: NfcTagViewModel
 ) {
     if (nfcTagViewModel.isDialogShown) {
+        // This dialog is shown while waiting for an NFC tag to be detected.
         Dialog(
             onDismissRequest = {
                 nfcTagViewModel.isDialogShown = false
