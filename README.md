@@ -1,6 +1,10 @@
 
 # :iphone: Android App - Spoolman Companion
 
+<p align="center">
+  <img src="app_logo/app_logo.png" alt="SpoolCompanion app icon" width="240"/>
+</p>
+
 An Android app that connects to a Spoolman server, lets you select a spool, and writes its identifiers to NFC/RFID tags.
 
 Combined with [nfc2klipper](https://github.com/bofh69/nfc2klipper) it allows you to quickly load filament from a simple NFC tag.
