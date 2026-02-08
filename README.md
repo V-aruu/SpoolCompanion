@@ -25,21 +25,26 @@ And all this, from your mobile phone !
 
 <table>
   <tr>
-    <td align="center">
-      <img src="docs/images/main_screen.png" alt="Main screen - spool list" height="760"/>
-      <br/>
+    <td align="center" valign="top">
+      <img src="docs/images/main_screen.png" alt="Main screen - spool list" width="260"/>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/images/write_dialog.png" alt="Write dialog" width="260"/>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/images/read_dialog.png" alt="Read dialog" width="260"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
       <strong>Spool Radar</strong><br/>
       The full list with color swatches and remaining filament bars.
     </td>
-    <td align="center">
-      <img src="docs/images/write_dialog.png" alt="Write dialog" height="760"/>
-      <br/>
+    <td align="center" valign="top">
       <strong>Write Mode</strong><br/>
       Tap a spool, approach a tag, and write instantly.
     </td>
-    <td align="center">
-      <img src="docs/images/read_dialog.png" alt="Read dialog" height="760"/>
-      <br/>
+    <td align="center" valign="top">
       <strong>Read Mode</strong><br/>
       Scan a tag to see spool details at a glance.
     </td>
