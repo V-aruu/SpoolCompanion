@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.DefaultShadowColor
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -155,6 +156,7 @@ fun SpoolEntry(
             verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
                 .padding(12.dp)
+                .fillMaxWidth()
         ) {
             // Border color is derived from the primary filament color for subtle contrast.
             val borderColor = spool.color.subtleBorderVariant()
@@ -217,6 +219,18 @@ fun SpoolEntry(
                     )
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
+            // Subtle label color: blend text toward the card surface so it reads softly.
+            val filamentIdColor = lerp(
+                MaterialTheme.colorScheme.onSurfaceVariant,
+                MaterialTheme.colorScheme.surface,
+                0.7f
+            )
+            Text(
+                text = "#${spool.filamentId}",
+                fontStyle = FontStyle.Italic,
+                color = filamentIdColor
+            )
         }
     }
 

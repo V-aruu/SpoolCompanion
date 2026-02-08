@@ -6,7 +6,7 @@
  - [x] Same for the upper icon on main screen
  - [x] Implement a better UI theme + Dark and Light variants
  - [ ] Show animation when tag is written
- - [ ] Handle color for multicolor spool
+ - [x] Handle color for multicolor spool
  
 ## ISSUES
 
