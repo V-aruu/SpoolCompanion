@@ -39,6 +39,18 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                 val spoolApi = SpoolApi(baseUrl = url)
                 val spools = spoolApi.retrofitService.getSpoolList()
                 val entries = spools.map { spool ->
+                    // Prefer spool-specific initial weight; fall back to filament weight when absent.
+                    val totalWeight = when {
+                        spool.initial_weight > 0 -> spool.initial_weight
+                        spool.filament.weight > 0 -> spool.filament.weight
+                        else -> 0.0
+                    }
+                    // Remaining fraction is clamped to [0, 1] for UI rendering.
+                    val remainingFraction = if (totalWeight > 0) {
+                        (spool.remaining_weight / totalWeight).toFloat().coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
                     SpoolListEntry(
                         id = spool.id,
                         filamentId = spool.filament.id,
@@ -49,6 +61,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         weight = convertWeightDoubleToString(spool.filament.weight),
                         diameter = spool.filament.diameter,
                         comment = spool.comment,
+                        remainingFraction = remainingFraction,
                         // Guard against empty multi-color strings which would cause an
                         // IllegalArgumentException when converting "#" to a color.
                         multiColors = if (spool.filament.multi_color_hexes.isBlank()) {

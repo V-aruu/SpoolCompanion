@@ -152,85 +152,113 @@ fun SpoolEntry(
                 spotColor = shadowColor),
         shape = MaterialTheme.shapes.small,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
-                .padding(12.dp)
-                .fillMaxWidth()
-        ) {
-            // Border color is derived from the primary filament color for subtle contrast.
-            val borderColor = spool.color.subtleBorderVariant()
-            // Show single color or multicolor filament.
-            if (spool.multiColors.isNotEmpty() && spool.multiColors.any { it != Color.Transparent }) {
-                // Spoolman provides a direction hint for multi-color filaments.
-                val direction = spool.multiColorsDirection.trim().lowercase()
-                val isLongitudinal = direction == "longitudinal"
+        Column(modifier = modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = modifier
+                    .padding(12.dp)
+                    .fillMaxWidth()
+            ) {
+                // Border color is derived from the primary filament color for subtle contrast.
+                val borderColor = spool.color.subtleBorderVariant()
+                // Show single color or multicolor filament.
+                if (spool.multiColors.isNotEmpty() && spool.multiColors.any { it != Color.Transparent }) {
+                    // Spoolman provides a direction hint for multi-color filaments.
+                    val direction = spool.multiColorsDirection.trim().lowercase()
+                    val isLongitudinal = direction == "longitudinal"
 
-                Box(
-                    modifier = modifier
-                        .size(24.dp)
-                        .border(1.dp, borderColor)
-                ) {
-                    if (isLongitudinal) {
-                        // Longitudinal: top/bottom (stacked vertically).
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            spool.multiColors.forEach { c ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp, 12.dp)
-                                        .background(c)
-                                )
+                    Box(
+                        modifier = modifier
+                            .size(24.dp)
+                            .border(1.dp, borderColor)
+                    ) {
+                        if (isLongitudinal) {
+                            // Longitudinal: top/bottom (stacked vertically).
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                spool.multiColors.forEach { c ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp, 12.dp)
+                                            .background(c)
+                                    )
+                                }
                             }
-                        }
-                    } else {
-                        // Coaxial (default): left/right (side-by-side).
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            spool.multiColors.forEach { c ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(12.dp, 24.dp)
-                                        .background(c)
-                                )
+                        } else {
+                            // Coaxial (default): left/right (side-by-side).
+                            Row(modifier = Modifier.fillMaxSize()) {
+                                spool.multiColors.forEach { c ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp, 24.dp)
+                                            .background(c)
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                Box(
-                    modifier = modifier
-                        .size(24.dp)
-                        .background(spool.color)
-                        .border(1.dp, borderColor)
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .padding(start = 8.dp)
-            ) {
-                Text(
-                    text = "${spool.vendorName} - ${spool.name} " +
-                            "(${spool.material}, ${spool.diameter} mm, ${spool.weight})",
-                )
-                if (spool.comment.isNotEmpty()) {
-                    Text(
-                        text = spool.comment,
-                        fontStyle = FontStyle.Italic,
-                        modifier = Modifier.padding(start = 8.dp)
+                } else {
+                    Box(
+                        modifier = modifier
+                            .size(24.dp)
+                            .background(spool.color)
+                            .border(1.dp, borderColor)
                     )
                 }
+                Column(
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                ) {
+                    Text(
+                        text = "${spool.vendorName} - ${spool.name} " +
+                                "(${spool.material}, ${spool.diameter} mm, ${spool.weight})",
+                    )
+                    if (spool.comment.isNotEmpty()) {
+                        Text(
+                            text = spool.comment,
+                            fontStyle = FontStyle.Italic,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                // Subtle label color: blend text toward the card surface so it reads softly.
+                val filamentIdColor = lerp(
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.colorScheme.surface,
+                    0.7f
+                )
+                Text(
+                    text = "#${spool.filamentId}",
+                    fontStyle = FontStyle.Italic,
+                    color = filamentIdColor
+                )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            // Subtle label color: blend text toward the card surface so it reads softly.
-            val filamentIdColor = lerp(
-                MaterialTheme.colorScheme.onSurfaceVariant,
-                MaterialTheme.colorScheme.surface,
-                0.7f
-            )
-            Text(
-                text = "#${spool.filamentId}",
-                fontStyle = FontStyle.Italic,
-                color = filamentIdColor
-            )
+            // Remaining filament indicator (percentage of initial/total weight).
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                // Subtle default color; switch to burgundy when remaining < 5%.
+                val remainingColor = if (spool.remainingFraction < 0.05f) {
+                    Color(0xFFB01D2A)
+                } else {
+                    // Use a lighter blend in light theme so the bar stays visible.
+                    val blendRatio = if (isSystemInDarkTheme()) 0.5f else 0.05f
+                    lerp(
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        MaterialTheme.colorScheme.surface,
+                        blendRatio
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(spool.remainingFraction)
+                        .background(remainingColor)
+                )
+            }
         }
     }
 
