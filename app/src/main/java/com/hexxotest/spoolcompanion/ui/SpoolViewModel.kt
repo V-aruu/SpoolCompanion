@@ -46,7 +46,17 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         material = spool.filament.material,
                         weight = convertWeightDoubleToString(spool.filament.weight),
                         diameter = spool.filament.diameter,
-                        comment = spool.comment
+                        comment = spool.comment,
+                        // Guard against empty multi-color strings which would cause an
+                        // IllegalArgumentException when converting "#" to a color.
+                        multiColors = if (spool.filament.multi_color_hexes.isBlank()) {
+                            emptyList()
+                        } else {
+                            spool.filament.multi_color_hexes.split(",")
+                                .filter { it.isNotBlank() }
+                                .map { Color("#${it}".toColorInt()) }
+                        },
+                        multiColorsDirection = spool.filament.multi_color_direction
                     )
                 }
                 UiState.Success(entries)

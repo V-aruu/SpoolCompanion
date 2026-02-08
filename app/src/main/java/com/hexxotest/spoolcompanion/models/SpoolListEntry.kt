@@ -11,5 +11,7 @@ data class SpoolListEntry(
     val name: String = "",
     val material: String = "",
     val diameter: Double = 0.0,
-    val weight: String = ""
+    val weight: String = "",
+    val multiColors: List<Color> = listOf(Color.Transparent, Color.Transparent),
+    val multiColorsDirection: String = ""
 )

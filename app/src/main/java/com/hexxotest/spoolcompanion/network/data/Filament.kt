@@ -17,5 +17,7 @@ data class Filament(
     val settings_extruder_temp: Int = 0,
     val spool_weight: Double = 0.0,
     val vendor: Vendor,
-    val weight: Double= 0.0
+    val weight: Double= 0.0,
+    val multi_color_hexes: String= "",
+    val multi_color_direction: String= "",
 )

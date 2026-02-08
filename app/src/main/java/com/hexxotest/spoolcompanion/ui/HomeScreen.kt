@@ -152,12 +152,35 @@ fun SpoolEntry(
                 .padding(12.dp)
         ) {
             val borderColor = spool.color.subtleBorderVariant()
-            Box(
-                modifier = modifier
-                    .size(24.dp)
-                    .background(spool.color)
-                    .border(1.dp, borderColor)
-            )
+            // Show single color or multicolor filament side‑by‑side.
+            if (spool.multiColors.isNotEmpty() && spool.multiColors.any { it != Color.Transparent }) {
+                Box(
+                    modifier = modifier
+                        .size(24.dp)
+                        .border(1.dp, borderColor)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .height(24.dp)
+                    ) {
+
+                        spool.multiColors.forEach { c ->
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp, 24.dp)
+                                    .background(c)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = modifier
+                        .size(24.dp)
+                        .background(spool.color)
+                        .border(1.dp, borderColor)
+                )
+            }
             Column(
                 modifier = Modifier
                     .padding(start = 8.dp)
