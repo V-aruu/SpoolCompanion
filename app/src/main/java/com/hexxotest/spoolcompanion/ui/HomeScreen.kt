@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.ui.res.colorResource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -49,6 +50,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hexxotest.spoolcompanion.R
 import com.hexxotest.spoolcompanion.models.SpoolListEntry
+import kotlin.math.roundToInt
 
 @Composable
 // Main Screen selector : switch between Spool list, loading animation or error message
@@ -57,6 +59,26 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     nfcTagViewModel: NfcTagViewModel
 ) {
+    // Show an error dialog for NFC write failures.
+    val writeErrorMessage = nfcTagViewModel.writeErrorMessage
+    if (writeErrorMessage != null) {
+        WriteErrorDialog(
+            message = writeErrorMessage,
+            onDismiss = { nfcTagViewModel.writeErrorMessage = null }
+        )
+    }
+    // Show a read dialog when a tag is scanned outside of write mode.
+    val readTagInfo = nfcTagViewModel.readTagInfo
+    if (readTagInfo != null) {
+        val spool = (uiState as? SpoolViewModel.UiState.Success)
+            ?.spools
+            ?.firstOrNull { it.id == readTagInfo.spoolId }
+        ReadTagDialog(
+            readTagInfo = readTagInfo,
+            spool = spool,
+            onDismiss = { nfcTagViewModel.readTagInfo = null }
+        )
+    }
     when (uiState) {
         is SpoolViewModel.UiState.Success -> {
             // NFC dialog is driven by shared view-model state so it can be dismissed after a write.
@@ -337,6 +359,183 @@ fun WriteNfcDialog(
                         ) {
                             Text(stringResource(id = R.string.dismiss))
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WriteErrorDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        title = { Text(text = "NFC Write Failed") },
+        text = { Text(text = message) },
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "OK")
+            }
+        }
+    )
+}
+
+@Composable
+fun ReadTagDialog(
+    readTagInfo: ReadTagInfo,
+    spool: SpoolListEntry?,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+            ) {
+                // Large header with a color swatch matching the filament.
+                val headerColor = spool?.color ?: MaterialTheme.colorScheme.surfaceVariant
+                val headerBorder = spool?.color?.subtleBorderVariant()
+                    ?: MaterialTheme.colorScheme.outlineVariant
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (spool != null &&
+                        spool.multiColors.isNotEmpty() &&
+                        spool.multiColors.any { it != Color.Transparent }
+                    ) {
+                        // Render multi-color filaments using the same direction logic as the card.
+                        val direction = spool.multiColorsDirection.trim().lowercase()
+                        val isLongitudinal = direction == "longitudinal"
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .border(1.dp, headerBorder)
+                        ) {
+                            if (isLongitudinal) {
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    spool.multiColors.forEach { c ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(48.dp, 24.dp)
+                                                .background(c)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Row(modifier = Modifier.fillMaxSize()) {
+                                    spool.multiColors.forEach { c ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp, 48.dp)
+                                                .background(c)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else if (spool != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(headerColor)
+                                .border(1.dp, headerBorder)
+                        )
+                    } else {
+                        // Unknown tag: show NFC-off icon instead of a color swatch.
+                        Image(
+                            modifier = Modifier.size(48.dp),
+                            painter = painterResource(id = R.drawable.ic_nfc_off),
+                            contentDescription = "Unknown NFC tag",
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                    Column(modifier = Modifier.padding(start = 12.dp)) {
+                        Text(
+                            text = spool?.let { "${it.vendorName} - ${it.name}" } ?: "Unknown tag",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        if (spool != null) {
+                            Text(
+                                text = "Spool #${spool.id}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+
+                // Slightly blended label color for field descriptions.
+                val labelColor = lerp(
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.colorScheme.surface,
+                    0.4f
+                )
+                // Always show tag UID, even if the payload cannot be parsed.
+                Row {
+                    Text(text = "Tag ID:", color = labelColor)
+                    Text(text = readTagInfo.tagId, modifier = Modifier.padding(start = 8.dp))
+                }
+
+                if (spool != null) {
+                    // Rich details from the loaded spool list.
+                    Row {
+                        Text(text = "Spool ID:", color = labelColor)
+                        Text(text = "#${spool.id}", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row {
+                        Text(text = "Filament ID:", color = labelColor)
+                        Text(text = "#${spool.filamentId}", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row {
+                        Text(text = "Material:", color = labelColor)
+                        Text(text = spool.material, modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row {
+                        Text(text = "Diameter:", color = labelColor)
+                        Text(text = "${spool.diameter} mm", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    if (spool.totalWeight.isNotEmpty()) {
+                        Row {
+                            Text(text = "Spool weight:", color = labelColor)
+                            Text(text = spool.totalWeight, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                    if (spool.remainingWeight.isNotEmpty()) {
+                        val remainingPercent = (spool.remainingFraction * 100).roundToInt()
+                        Row {
+                            Text(text = "Remaining:", color = labelColor)
+                            Text(
+                                text = "${spool.remainingWeight} (${remainingPercent}%)",
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                } else {
+                    // Fallback when the spool list is unavailable or the tag is unknown.
+                    if (!readTagInfo.rawText.isNullOrBlank()) {
+                        Row {
+                            Text(text = "Raw payload:", color = labelColor)
+                            Text(text = readTagInfo.rawText, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    TextButton(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        onClick = onDismiss
+                    ) {
+                        Text(stringResource(id = R.string.dismiss))
                     }
                 }
             }

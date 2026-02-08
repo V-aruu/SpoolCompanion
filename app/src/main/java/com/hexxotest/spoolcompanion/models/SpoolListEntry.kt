@@ -15,6 +15,10 @@ data class SpoolListEntry(
     val diameter: Double = 0.0,
     // Pre-formatted weight string (e.g., "750 g" or "1 kg") for direct UI display.
     val weight: String = "",
+    // Pre-formatted total filament weight used for the remaining bar and dialogs.
+    val totalWeight: String = "",
+    // Pre-formatted remaining filament weight for the tag info dialog.
+    val remainingWeight: String = "",
     // Fraction of filament remaining on the spool (0.0..1.0).
     val remainingFraction: Float = 0f,
     val multiColors: List<Color> = listOf(Color.Transparent, Color.Transparent),

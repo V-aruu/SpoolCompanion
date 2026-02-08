@@ -51,6 +51,17 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                     } else {
                         0f
                     }
+                    // Format weights for UI; keep empty strings if the backend doesn't provide values.
+                    val totalWeightLabel = if (totalWeight > 0) {
+                        convertWeightDoubleToString(totalWeight)
+                    } else {
+                        ""
+                    }
+                    val remainingWeightLabel = if (spool.remaining_weight > 0) {
+                        convertWeightDoubleToString(spool.remaining_weight)
+                    } else {
+                        ""
+                    }
                     SpoolListEntry(
                         id = spool.id,
                         filamentId = spool.filament.id,
@@ -61,6 +72,8 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         weight = convertWeightDoubleToString(spool.filament.weight),
                         diameter = spool.filament.diameter,
                         comment = spool.comment,
+                        totalWeight = totalWeightLabel,
+                        remainingWeight = remainingWeightLabel,
                         remainingFraction = remainingFraction,
                         // Guard against empty multi-color strings which would cause an
                         // IllegalArgumentException when converting "#" to a color.

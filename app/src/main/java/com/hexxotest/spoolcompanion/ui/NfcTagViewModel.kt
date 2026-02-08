@@ -17,4 +17,18 @@ class NfcTagViewModel : ViewModel() {
     // Controls visibility of the "approach tag" dialog.
     var isDialogShown by mutableStateOf(false)
 
+    // Holds data from the last scanned tag (when not writing) to show a read dialog.
+    var readTagInfo by mutableStateOf<ReadTagInfo?>(null)
+
+    // Error message for NFC write failures (shown in a dialog).
+    var writeErrorMessage by mutableStateOf<String?>(null)
+
 }
+
+// Parsed tag payload + tag UID for the read dialog.
+data class ReadTagInfo(
+    val tagId: String,
+    val spoolId: Int?,
+    val filamentId: Int?,
+    val rawText: String?
+)
