@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 // Raw filament model from Spoolman; used to build UI-friendly entries.
 @Serializable
 data class Filament(
-    val color_hex: String = "",
+    val color_hex: String = "00FFFFFF",
     val density: Double = 0.0,
     val diameter: Double = 0.0,
     val external_id: String = "",
