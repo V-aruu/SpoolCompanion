@@ -30,7 +30,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,15 +51,19 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
 
     val context = LocalContext.current
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
-    var isSortMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    var selectedSort by rememberSaveable { mutableStateOf(SortOption.REMAINING) }
-    var isSortAscending by rememberSaveable { mutableStateOf(true) }
-
     // Persisted settings live in SharedPreferences for now (DataStore key exists but is unused).
     val sharedPrefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val spoolmanUrlFromPrefs = sharedPrefs.getString("spoolman_url", "")
     val spoolmanUrl = remember { mutableStateOf(spoolmanUrlFromPrefs) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var isSortMenuExpanded by remember { mutableStateOf(false) }
+    // Restore sort preference on app launch; fall back to Remaining when value is missing/invalid.
+    var selectedSort by remember {
+        mutableStateOf(sharedPrefs.readSortOption())
+    }
+    var isSortAscending by remember {
+        mutableStateOf(sharedPrefs.getBoolean(KEY_SORT_ASCENDING, true))
+    }
 
     Scaffold(
         topBar = {
@@ -89,12 +92,16 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                                 text = { Text(option.label) },
                                 onClick = {
                                     selectedSort = option
+                                    sharedPrefs.edit { putString(KEY_SORT_OPTION, option.name) }
                                     isSortMenuExpanded = false
                                 }
                             )
                         }
                     }
-                    IconButton(onClick = { isSortAscending = !isSortAscending }) {
+                    IconButton(onClick = {
+                        isSortAscending = !isSortAscending
+                        sharedPrefs.edit { putBoolean(KEY_SORT_ASCENDING, isSortAscending) }
+                    }) {
                         Icon(
                             painter = painterResource(
                                 id = if (isSortAscending) {
@@ -163,6 +170,14 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
         )
     }
 
+}
+
+private const val KEY_SORT_OPTION = "sort_option"
+private const val KEY_SORT_ASCENDING = "sort_ascending"
+
+private fun android.content.SharedPreferences.readSortOption(): SortOption {
+    val stored = getString(KEY_SORT_OPTION, SortOption.ID.name)
+    return SortOption.entries.firstOrNull { it.name == stored } ?: SortOption.ID
 }
 
 @Composable
