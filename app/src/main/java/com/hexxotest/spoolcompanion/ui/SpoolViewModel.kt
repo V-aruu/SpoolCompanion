@@ -109,7 +109,8 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
             val transparencyPercent = normalized.drop(6).toIntOrNull()
             if (transparencyPercent != null) {
                 val clampedTransparency = transparencyPercent.coerceIn(0, 100)
-                val opacity = (100 - clampedTransparency) / 100f
+                // API semantics: 0 = fully transparent, 100 = fully opaque.
+                val opacity = clampedTransparency / 100f
                 val alpha = (opacity * 255f).roundToInt().coerceIn(0, 255)
                 val standardArgb = "${alpha.toString(16).padStart(2, '0')}$rgb"
                 return Color("#$standardArgb".toColorInt())
