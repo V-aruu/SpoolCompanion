@@ -13,6 +13,7 @@ import com.hexxotest.spoolcompanion.network.SpoolApi
 import kotlinx.coroutines.launch
 import java.io.IOException
 import androidx.core.graphics.toColorInt
+import kotlin.math.roundToInt
 
 class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
 
@@ -69,7 +70,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         name = spool.filament.name,
                         // Keep the raw hex string so users can search by color code.
                         colorHex = spool.filament.color_hex,
-                        color = Color("#${spool.filament.color_hex}".toColorInt()),
+                        color = parseSpoolmanColor(spool.filament.color_hex),
                         material = spool.filament.material,
                         weight = convertWeightDoubleToString(spool.filament.weight),
                         diameter = spool.filament.diameter,
@@ -84,7 +85,7 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         } else {
                             spool.filament.multi_color_hexes.split(",")
                                 .filter { it.isNotBlank() }
-                                .map { Color("#${it}".toColorInt()) }
+                                .map { parseSpoolmanColor(it) }
                         },
                         multiColorsDirection = spool.filament.multi_color_direction
                     )
@@ -96,6 +97,32 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
             }
         }
     }
+
+    private fun parseSpoolmanColor(rawColor: String): Color {
+        val normalized = rawColor.trim().removePrefix("#")
+        // Spoolman may return colors as RRGGBB + decimal transparency percent (0..100).
+        if (normalized.length > 6 &&
+            normalized.take(6).all { it.isHexDigit() } &&
+            normalized.drop(6).all { it.isDigit() }
+        ) {
+            val rgb = normalized.take(6)
+            val transparencyPercent = normalized.drop(6).toIntOrNull()
+            if (transparencyPercent != null) {
+                val clampedTransparency = transparencyPercent.coerceIn(0, 100)
+                val opacity = (100 - clampedTransparency) / 100f
+                val alpha = (opacity * 255f).roundToInt().coerceIn(0, 255)
+                val standardArgb = "${alpha.toString(16).padStart(2, '0')}$rgb"
+                return Color("#$standardArgb".toColorInt())
+            }
+        }
+
+        // Fall back to normal hex parsing (#RRGGBB or #AARRGGBB).
+        return runCatching { Color("#$normalized".toColorInt()) }
+            .getOrElse { Color.Transparent }
+    }
+
+    private fun Char.isHexDigit(): Boolean =
+        this in '0'..'9' || this in 'a'..'f' || this in 'A'..'F'
 
     private fun convertWeightDoubleToString(weight: Double): String {
         // Spoolman returns weight in grams; format for UI with g/kg units.
