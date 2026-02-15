@@ -24,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +62,15 @@ import com.hexxotest.spoolcompanion.R
 import com.hexxotest.spoolcompanion.models.SpoolListEntry
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 // Main Screen selector: switch between Spool list, loading animation or error message
 fun HomeScreen(
     uiState: SpoolViewModel.UiState,
     modifier: Modifier = Modifier,
-    nfcTagViewModel: NfcTagViewModel
+    nfcTagViewModel: NfcTagViewModel,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
 ) {
     // Show an error dialog for NFC write failures.
     val writeErrorMessage = nfcTagViewModel.writeErrorMessage
@@ -103,65 +108,71 @@ fun HomeScreen(
             if (nfcTagViewModel.isDialogShown) {
                 WriteNfcDialog(nfcTagViewModel)
             }
-            Box(modifier = modifier.fillMaxSize()) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    if (isSearchEnabled) {
-                        // Place the search field directly under the top bar with a small gap.
-                        Spacer(modifier = Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            singleLine = true,
-                            placeholder = { Text(text = "Search spools...") },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(
-                                            painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
-                                            contentDescription = "Clear search"
-                                        )
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = modifier.fillMaxSize()
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (isSearchEnabled) {
+                            // Place the search field directly under the top bar with a small gap.
+                            Spacer(modifier = Modifier.height(4.dp))
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                singleLine = true,
+                                placeholder = { Text(text = "Search spools...") },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(
+                                                painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
+                                                contentDescription = "Clear search"
+                                            )
+                                        }
                                     }
                                 }
+                            )
+                        }
+                        SpoolList(
+                            spools = filteredSpools,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 88.dp),
+                            nfcTagViewModel = nfcTagViewModel
+                        )
+                    }
+                    SmallFloatingActionButton(
+                        onClick = {
+                            isSearchEnabled = !isSearchEnabled
+                            // Disabling search returns the full list immediately.
+                            if (!isSearchEnabled) {
+                                searchQuery = ""
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 16.dp, bottom = 16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isSearchEnabled) {
+                                    android.R.drawable.ic_menu_close_clear_cancel
+                                } else {
+                                    android.R.drawable.ic_menu_search
+                                }
+                            ),
+                            contentDescription = if (isSearchEnabled) {
+                                "Disable search"
+                            } else {
+                                "Enable search"
                             }
                         )
                     }
-                    SpoolList(
-                        spools = filteredSpools,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 88.dp),
-                        nfcTagViewModel = nfcTagViewModel
-                    )
-                }
-                SmallFloatingActionButton(
-                    onClick = {
-                        isSearchEnabled = !isSearchEnabled
-                        // Disabling search returns the full list immediately.
-                        if (!isSearchEnabled) {
-                            searchQuery = ""
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 16.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (isSearchEnabled) {
-                                android.R.drawable.ic_menu_close_clear_cancel
-                            } else {
-                                android.R.drawable.ic_menu_search
-                            }
-                        ),
-                        contentDescription = if (isSearchEnabled) {
-                            "Disable search"
-                        } else {
-                            "Enable search"
-                        }
-                    )
                 }
             }
         }

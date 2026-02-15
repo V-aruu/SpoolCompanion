@@ -10,8 +10,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.hexxotest.spoolcompanion.models.SpoolListEntry
 import com.hexxotest.spoolcompanion.network.SpoolApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.IOException
+import kotlinx.coroutines.withContext
 import androidx.core.graphics.toColorInt
 import kotlin.math.roundToInt
 
@@ -29,72 +30,94 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
     var currentUiState: UiState by mutableStateOf(UiState.Loading)
         private set
 
+    // Tracks swipe-to-refresh progress without forcing the full-screen loading UI.
+    var isRefreshing: Boolean by mutableStateOf(false)
+        private set
+
     init {
-        getSpools()
+        loadSpools(initialLoad = true)
     }
 
-    private fun getSpools() {
+    fun refreshSpools() {
+        loadSpools(initialLoad = false)
+    }
+
+    private fun loadSpools(initialLoad: Boolean) {
         viewModelScope.launch {
-            currentUiState = try {
-                // Fetch raw Spoolman models and map them into a UI-friendly list entry.
-                val spoolApi = SpoolApi(baseUrl = url)
-                val spools = spoolApi.retrofitService.getSpoolList()
-                val entries = spools.map { spool ->
-                    // Prefer spool-specific initial weight; fall back to filament weight when absent.
-                    val totalWeight = when {
-                        spool.initial_weight > 0 -> spool.initial_weight
-                        spool.filament.weight > 0 -> spool.filament.weight
-                        else -> 0.0
-                    }
-                    // Remaining fraction is clamped to [0, 1] for UI rendering.
-                    val remainingFraction = if (totalWeight > 0) {
-                        (spool.remaining_weight / totalWeight).toFloat().coerceIn(0f, 1f)
-                    } else {
-                        0f
-                    }
-                    // Format weights for UI; keep empty strings if the backend doesn't provide values.
-                    val totalWeightLabel = if (totalWeight > 0) {
-                        convertWeightDoubleToString(totalWeight)
-                    } else {
-                        ""
-                    }
-                    val remainingWeightLabel = if (spool.remaining_weight > 0) {
-                        convertWeightDoubleToString(spool.remaining_weight)
-                    } else {
-                        ""
-                    }
-                    SpoolListEntry(
-                        id = spool.id,
-                        filamentId = spool.filament.id,
-                        vendorName = spool.filament.vendor.name,
-                        name = spool.filament.name,
-                        // Keep the raw hex string so users can search by color code.
-                        colorHex = spool.filament.color_hex,
-                        color = parseSpoolmanColor(spool.filament.color_hex),
-                        material = spool.filament.material,
-                        weight = convertWeightDoubleToString(spool.filament.weight),
-                        diameter = spool.filament.diameter,
-                        comment = spool.comment,
-                        totalWeight = totalWeightLabel,
-                        remainingWeight = remainingWeightLabel,
-                        remainingFraction = remainingFraction,
-                        // Guard against empty multi-color strings which would cause an
-                        // IllegalArgumentException when converting "#" to a color.
-                        multiColors = if (spool.filament.multi_color_hexes.isBlank()) {
-                            emptyList()
-                        } else {
-                            spool.filament.multi_color_hexes.split(",")
-                                .filter { it.isNotBlank() }
-                                .map { parseSpoolmanColor(it) }
-                        },
-                        multiColorsDirection = spool.filament.multi_color_direction
-                    )
-                }
-                UiState.Success(entries)
-            } catch (e: Exception) {
-                // Any failure (network, parsing, etc.) surfaces as a generic error state.
-                UiState.Error
+            val hadDataBeforeRefresh = currentUiState is UiState.Success
+            if (initialLoad) {
+                currentUiState = UiState.Loading
+            } else {
+                isRefreshing = true
             }
+            try {
+                currentUiState = UiState.Success(fetchSpools())
+            } catch (e: Exception) {
+                // Refresh failures keep existing list visible; initial load still shows error state.
+                if (!hadDataBeforeRefresh) {
+                    currentUiState = UiState.Error
+                }
+                Log.e("SpoolViewModel", "Failed to fetch spool list", e)
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
+
+    private suspend fun fetchSpools(): List<SpoolListEntry> = withContext(Dispatchers.IO) {
+        // Fetch raw Spoolman models and map them into a UI-friendly list entry.
+        val spoolApi = SpoolApi(baseUrl = url)
+        val spools = spoolApi.retrofitService.getSpoolList()
+        spools.map { spool ->
+            // Prefer spool-specific initial weight; fall back to filament weight when absent.
+            val totalWeight = when {
+                spool.initial_weight > 0 -> spool.initial_weight
+                spool.filament.weight > 0 -> spool.filament.weight
+                else -> 0.0
+            }
+            // Remaining fraction is clamped to [0, 1] for UI rendering.
+            val remainingFraction = if (totalWeight > 0) {
+                (spool.remaining_weight / totalWeight).toFloat().coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+            // Format weights for UI; keep empty strings if the backend doesn't provide values.
+            val totalWeightLabel = if (totalWeight > 0) {
+                convertWeightDoubleToString(totalWeight)
+            } else {
+                ""
+            }
+            val remainingWeightLabel = if (spool.remaining_weight > 0) {
+                convertWeightDoubleToString(spool.remaining_weight)
+            } else {
+                ""
+            }
+            SpoolListEntry(
+                id = spool.id,
+                filamentId = spool.filament.id,
+                vendorName = spool.filament.vendor.name,
+                name = spool.filament.name,
+                // Keep the raw hex string so users can search by color code.
+                colorHex = spool.filament.color_hex,
+                color = parseSpoolmanColor(spool.filament.color_hex),
+                material = spool.filament.material,
+                weight = convertWeightDoubleToString(spool.filament.weight),
+                diameter = spool.filament.diameter,
+                comment = spool.comment,
+                totalWeight = totalWeightLabel,
+                remainingWeight = remainingWeightLabel,
+                remainingFraction = remainingFraction,
+                // Guard against empty multi-color strings which would cause an
+                // IllegalArgumentException when converting "#" to a color.
+                multiColors = if (spool.filament.multi_color_hexes.isBlank()) {
+                    emptyList()
+                } else {
+                    spool.filament.multi_color_hexes.split(",")
+                        .filter { it.isNotBlank() }
+                        .map { parseSpoolmanColor(it) }
+                },
+                multiColorsDirection = spool.filament.multi_color_direction
+            )
         }
     }
 

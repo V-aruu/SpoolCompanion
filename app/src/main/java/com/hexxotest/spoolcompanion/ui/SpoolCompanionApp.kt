@@ -90,7 +90,10 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                 )
                 HomeScreen(
                     uiState = spoolViewModel.currentUiState,
-                    nfcTagViewModel = nfcTagViewModel
+                    nfcTagViewModel = nfcTagViewModel,
+                    // Swipe down on the list to request a fresh API fetch.
+                    isRefreshing = spoolViewModel.isRefreshing,
+                    onRefresh = { spoolViewModel.refreshSpools() }
                 )
             } else {
                 NoUrlApp()
