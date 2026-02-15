@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -70,7 +70,9 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     nfcTagViewModel: NfcTagViewModel,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    selectedSort: SortOption,
+    isSortAscending: Boolean
 ) {
     // Show an error dialog for NFC write failures.
     val writeErrorMessage = nfcTagViewModel.writeErrorMessage
@@ -103,6 +105,10 @@ fun HomeScreen(
                 } else {
                     uiState.spools.filter { it.matchesSearch(searchQuery) }
                 }
+            }
+            // Apply selected sorting mode over the filtered set.
+            val sortedSpools = remember(filteredSpools, selectedSort, isSortAscending) {
+                filteredSpools.sortedWith(spoolComparator(selectedSort, isSortAscending))
             }
             // NFC dialog is driven by shared view-model state so it can be dismissed after a write.
             if (nfcTagViewModel.isDialogShown) {
@@ -140,10 +146,11 @@ fun HomeScreen(
                             )
                         }
                         SpoolList(
-                            spools = filteredSpools,
+                            spools = sortedSpools,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 88.dp),
-                            nfcTagViewModel = nfcTagViewModel
+                            nfcTagViewModel = nfcTagViewModel,
+                            selectedSort = selectedSort
                         )
                     }
                     SmallFloatingActionButton(
@@ -377,11 +384,12 @@ fun SpoolEntry(
 }
 
 @Composable
-fun SpoolList(
+private fun SpoolList(
     spools: List<SpoolListEntry>,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    nfcTagViewModel: NfcTagViewModel
+    nfcTagViewModel: NfcTagViewModel,
+    selectedSort: SortOption = SortOption.REMAINING
 ) {
     // Lazy list to efficiently handle large numbers of spools.
     LazyColumn(
@@ -391,10 +399,136 @@ fun SpoolList(
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        items(spools, itemContent = { item ->
+        itemsIndexed(spools, key = { _, item -> item.id }) { index, item ->
+            // Insert a subtle visual break whenever the sorting group changes.
+            val currentGroup = item.groupLabel(selectedSort)
+            val previousGroup = if (index > 0) spools[index - 1].groupLabel(selectedSort) else null
+            val isNewGroup = index == 0 || currentGroup != previousGroup
+
+            if (isNewGroup && currentGroup != null) {
+                if (index > 0) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+                Text(
+                    text = currentGroup,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
+                )
+            }
             SpoolEntry(spool = item, nfcTagViewModel = nfcTagViewModel)
-        })
+        }
     }
+}
+
+enum class SortOption(val label: String) {
+    REMAINING("Remaining"),
+    NAME("Name"),
+    VENDOR("Vendor"),
+    ID("ID"),
+    COLOR("Color")
+}
+
+private fun spoolComparator(selectedSort: SortOption, isAscending: Boolean): Comparator<SpoolListEntry> {
+    val comparator = when (selectedSort) {
+        SortOption.REMAINING -> compareBy<SpoolListEntry> { it.remainingFraction }
+            .thenBy { it.name.lowercase() }
+            .thenBy { it.id }
+        SortOption.NAME -> compareBy<SpoolListEntry> { it.name.lowercase() }
+            .thenBy { it.vendorName.lowercase() }
+            .thenBy { it.id }
+        SortOption.VENDOR -> compareBy<SpoolListEntry> { it.vendorName.lowercase() }
+            .thenBy { it.name.lowercase() }
+            .thenBy { it.id }
+        SortOption.ID -> compareBy<SpoolListEntry> { it.id }
+        SortOption.COLOR -> compareBy<SpoolListEntry> { colorFamilyRank(it.colorHex) }
+            .thenBy { it.colorHex.lowercase() }
+            .thenBy { it.name.lowercase() }
+            .thenBy { it.id }
+    }
+    return if (isAscending) comparator else comparator.reversed()
+}
+
+private fun SpoolListEntry.groupLabel(selectedSort: SortOption): String? =
+    when (selectedSort) {
+        SortOption.REMAINING -> remainingGroupLabel(remainingFraction)
+        SortOption.NAME -> name.firstOrNull()?.uppercaseChar()?.toString() ?: "#"
+        SortOption.VENDOR -> vendorName.ifBlank { "Unknown vendor" }
+        // ID sorting is inherently unique per row, so extra group labels add noise.
+        SortOption.ID -> null
+        SortOption.COLOR -> colorFamilyLabel(colorHex)
+    }
+
+private fun remainingGroupLabel(fraction: Float): String {
+    val percent = (fraction.coerceIn(0f, 1f) * 100f).roundToInt()
+    return when {
+        percent < 10 -> "0-9%"
+        percent < 25 -> "10-24%"
+        percent < 50 -> "25-49%"
+        percent < 75 -> "50-74%"
+        else -> "75-100%"
+    }
+}
+
+private fun colorFamilyLabel(rawHex: String): String {
+    val normalized = rawHex.trim().removePrefix("#")
+    if (normalized.length < 6) return "Unknown color"
+    val rgb = normalized.take(6)
+    val r = rgb.substring(0, 2).toIntOrNull(16) ?: return "Unknown color"
+    val g = rgb.substring(2, 4).toIntOrNull(16) ?: return "Unknown color"
+    val b = rgb.substring(4, 6).toIntOrNull(16) ?: return "Unknown color"
+
+    val max = maxOf(r, g, b)
+    val min = minOf(r, g, b)
+    val delta = max - min
+    if (max < 32) return "Black"
+    if (delta < 12 && max > 220) return "White"
+    if (delta < 12) return "Gray"
+
+    val hue = hueDegrees(r, g, b)
+    return when {
+        hue < 20f -> "Red"
+        hue < 45f -> "Orange"
+        hue < 70f -> "Yellow"
+        hue < 155f -> "Green"
+        hue < 200f -> "Cyan"
+        hue < 255f -> "Blue"
+        hue < 300f -> "Purple"
+        hue < 340f -> "Pink"
+        else -> "Red"
+    }
+}
+
+private fun colorFamilyRank(rawHex: String): Int =
+    when (colorFamilyLabel(rawHex)) {
+        "Black" -> 0
+        "Gray" -> 1
+        "White" -> 2
+        "Red" -> 3
+        "Orange" -> 4
+        "Yellow" -> 5
+        "Green" -> 6
+        "Cyan" -> 7
+        "Blue" -> 8
+        "Purple" -> 9
+        "Pink" -> 10
+        else -> 11
+    }
+
+private fun hueDegrees(r: Int, g: Int, b: Int): Float {
+    val rf = r / 255f
+    val gf = g / 255f
+    val bf = b / 255f
+    val max = maxOf(rf, gf, bf)
+    val min = minOf(rf, gf, bf)
+    val delta = max - min
+    if (delta == 0f) return 0f
+    val rawHue = when (max) {
+        rf -> ((gf - bf) / delta) % 6f
+        gf -> ((bf - rf) / delta) + 2f
+        else -> ((rf - gf) / delta) + 4f
+    } * 60f
+    return if (rawHue < 0f) rawHue + 360f else rawHue
 }
 
 private fun SpoolListEntry.matchesSearch(rawQuery: String): Boolean {

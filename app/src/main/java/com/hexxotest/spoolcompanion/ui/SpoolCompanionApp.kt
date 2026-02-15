@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +30,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +53,9 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
     val context = LocalContext.current
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var isSortMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedSort by rememberSaveable { mutableStateOf(SortOption.REMAINING) }
+    var isSortAscending by rememberSaveable { mutableStateOf(true) }
 
     // Persisted settings live in SharedPreferences for now (DataStore key exists but is unused).
     val sharedPrefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -66,6 +73,44 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                     Text(stringResource(id = R.string.top_app_bar))
                 },
                 actions = {
+                    IconButton(onClick = { isSortMenuExpanded = true }) {
+                        Icon(
+                            painter = painterResource(id = android.R.drawable.ic_menu_sort_by_size),
+                            contentDescription = "Sort",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = isSortMenuExpanded,
+                        onDismissRequest = { isSortMenuExpanded = false }
+                    ) {
+                        SortOption.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option.label) },
+                                onClick = {
+                                    selectedSort = option
+                                    isSortMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                    IconButton(onClick = { isSortAscending = !isSortAscending }) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isSortAscending) {
+                                    android.R.drawable.arrow_up_float
+                                } else {
+                                    android.R.drawable.arrow_down_float
+                                }
+                            ),
+                            contentDescription = if (isSortAscending) {
+                                "Sort ascending"
+                            } else {
+                                "Sort descending"
+                            },
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_settings),
@@ -93,7 +138,9 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
                     nfcTagViewModel = nfcTagViewModel,
                     // Swipe down on the list to request a fresh API fetch.
                     isRefreshing = spoolViewModel.isRefreshing,
-                    onRefresh = { spoolViewModel.refreshSpools() }
+                    onRefresh = { spoolViewModel.refreshSpools() },
+                    selectedSort = selectedSort,
+                    isSortAscending = isSortAscending
                 )
             } else {
                 NoUrlApp()
