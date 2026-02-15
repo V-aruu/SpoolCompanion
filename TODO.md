@@ -8,7 +8,9 @@
  - [x] Handle color for multicolor spool
  - [ ] Show animation when tag is written
  - [ ] Show a checker board for transparent spool
- - [ ] Add a search bar to filter spool list
+ - [x] Add a search bar to filter spool list
+ - [ ] Add a "refresh" action when the main screen is "dragged down"
+ - [ ] Add a function to sort by id, brand name, material, etc
  
 ## ISSUES
 

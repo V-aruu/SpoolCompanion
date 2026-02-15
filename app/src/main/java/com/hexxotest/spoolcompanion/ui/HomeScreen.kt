@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,18 +20,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.ui.res.colorResource
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -38,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -53,7 +61,7 @@ import com.hexxotest.spoolcompanion.models.SpoolListEntry
 import kotlin.math.roundToInt
 
 @Composable
-// Main Screen selector : switch between Spool list, loading animation or error message
+// Main Screen selector: switch between Spool list, loading animation or error message
 fun HomeScreen(
     uiState: SpoolViewModel.UiState,
     modifier: Modifier = Modifier,
@@ -81,15 +89,81 @@ fun HomeScreen(
     }
     when (uiState) {
         is SpoolViewModel.UiState.Success -> {
+            var isSearchEnabled by rememberSaveable { mutableStateOf(false) }
+            var searchQuery by rememberSaveable { mutableStateOf("") }
+            // Recompute filtered rows as the user types; when disabled we keep full list.
+            val filteredSpools = remember(uiState.spools, isSearchEnabled, searchQuery) {
+                if (!isSearchEnabled) {
+                    uiState.spools
+                } else {
+                    uiState.spools.filter { it.matchesSearch(searchQuery) }
+                }
+            }
             // NFC dialog is driven by shared view-model state so it can be dismissed after a write.
             if (nfcTagViewModel.isDialogShown) {
                 WriteNfcDialog(nfcTagViewModel)
             }
-            SpoolList(
-                spools = uiState.spools,
-                modifier = modifier.fillMaxSize(),
-                nfcTagViewModel = nfcTagViewModel
-            )
+            Box(modifier = modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (isSearchEnabled) {
+                        // Place the search field directly under the top bar with a small gap.
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            singleLine = true,
+                            placeholder = { Text(text = "Search spools...") },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
+                                            contentDescription = "Clear search"
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    SpoolList(
+                        spools = filteredSpools,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 88.dp),
+                        nfcTagViewModel = nfcTagViewModel
+                    )
+                }
+                SmallFloatingActionButton(
+                    onClick = {
+                        isSearchEnabled = !isSearchEnabled
+                        // Disabling search returns the full list immediately.
+                        if (!isSearchEnabled) {
+                            searchQuery = ""
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 16.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (isSearchEnabled) {
+                                android.R.drawable.ic_menu_close_clear_cancel
+                            } else {
+                                android.R.drawable.ic_menu_search
+                            }
+                        ),
+                        contentDescription = if (isSearchEnabled) {
+                            "Disable search"
+                        } else {
+                            "Enable search"
+                        }
+                    )
+                }
+            }
         }
         is SpoolViewModel.UiState.Error -> ErrorScreen()
         is SpoolViewModel.UiState.Loading -> LoadingScreen()
@@ -310,6 +384,46 @@ fun SpoolList(
             SpoolEntry(spool = item, nfcTagViewModel = nfcTagViewModel)
         })
     }
+}
+
+private fun SpoolListEntry.matchesSearch(rawQuery: String): Boolean {
+    val query = rawQuery.trim()
+    if (query.isEmpty()) {
+        return true
+    }
+    // Search only requested fields: name, vendor, color, material and comment.
+    val searchable = listOf(
+        name,
+        vendorName,
+        colorHex,
+        material,
+        comment
+    ).joinToString(separator = " ").normalizeSearch()
+    // Split by spaces so multi-word input narrows results incrementally while typing.
+    return query.normalizeSearch()
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .all { token -> searchable.fuzzyContains(token) }
+}
+
+private fun String.normalizeSearch(): String =
+    trim().lowercase()
+
+private fun String.fuzzyContains(token: String): Boolean {
+    if (contains(token)) {
+        return true
+    }
+    // Fuzzy fallback: match token as an ordered subsequence.
+    var queryIndex = 0
+    for (char in this) {
+        if (queryIndex < token.length && char == token[queryIndex]) {
+            queryIndex++
+            if (queryIndex == token.length) {
+                return true
+            }
+        }
+    }
+    return false
 }
 
 @Composable

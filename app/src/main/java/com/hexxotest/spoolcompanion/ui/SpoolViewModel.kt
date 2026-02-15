@@ -67,6 +67,8 @@ class SpoolViewModel(spoolmanUrl: String) : ViewModel() {
                         filamentId = spool.filament.id,
                         vendorName = spool.filament.vendor.name,
                         name = spool.filament.name,
+                        // Keep the raw hex string so users can search by color code.
+                        colorHex = spool.filament.color_hex,
                         color = Color("#${spool.filament.color_hex}".toColorInt()),
                         material = spool.filament.material,
                         weight = convertWeightDoubleToString(spool.filament.weight),

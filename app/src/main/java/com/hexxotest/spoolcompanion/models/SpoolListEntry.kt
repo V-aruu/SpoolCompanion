@@ -8,6 +8,8 @@ data class SpoolListEntry(
     val id: Int = -1,
     val filamentId: Int = -1,
     val comment: String = "",
+    // Raw hex value from Spoolman (e.g., "ff0000"), used for searchable text.
+    val colorHex: String = "",
     val color: Color = Color.Transparent,
     val vendorName: String = "",
     val name: String = "",
