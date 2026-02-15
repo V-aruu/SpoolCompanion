@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -110,6 +113,11 @@ fun HomeScreen(
             val sortedSpools = remember(filteredSpools, selectedSort, isSortAscending) {
                 filteredSpools.sortedWith(spoolComparator(selectedSort, isSortAscending))
             }
+            val spoolListState = rememberLazyListState()
+            // Changing sort mode should reveal the new order from the top.
+            LaunchedEffect(selectedSort, isSortAscending) {
+                spoolListState.scrollToItem(0)
+            }
             // NFC dialog is driven by shared view-model state so it can be dismissed after a write.
             if (nfcTagViewModel.isDialogShown) {
                 WriteNfcDialog(nfcTagViewModel)
@@ -150,7 +158,8 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 88.dp),
                             nfcTagViewModel = nfcTagViewModel,
-                            selectedSort = selectedSort
+                            selectedSort = selectedSort,
+                            listState = spoolListState
                         )
                     }
                     SmallFloatingActionButton(
@@ -389,10 +398,12 @@ private fun SpoolList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     nfcTagViewModel: NfcTagViewModel,
-    selectedSort: SortOption = SortOption.REMAINING
+    selectedSort: SortOption = SortOption.REMAINING,
+    listState: LazyListState = rememberLazyListState()
 ) {
     // Lazy list to efficiently handle large numbers of spools.
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .padding(all = 4.dp),
