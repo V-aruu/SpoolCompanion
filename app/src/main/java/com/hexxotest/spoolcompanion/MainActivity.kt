@@ -100,17 +100,35 @@ class MainActivity : ComponentActivity() {
                 Parcelable::class.java
             ) as Tag
             if (nfcTagViewModel.isDialogShown) {
-                Log.w(
-                    "NFC",
-                    "SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId}"
-                )
-                // Payload format is a two-line text record consumed by the companion tool.
-                val msg = NdefMessage(
-                    NdefRecord.createTextRecord(
-                        null,
-                        "SPOOL:${nfcTagViewModel.spoolId}\nFILAMENT:${nfcTagViewModel.filamentId}"
+                val url = nfcTagViewModel.spoolmanUrl
+                if (!url.isNullOrBlank()) {
+                    Log.w(
+                        "NFC",
+                        "SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId} | SPOOLMANURL:${url}"
                     )
-                )
+                } else {
+                    Log.w(
+                        "NFC",
+                        "SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId}"
+                    )
+                }
+                
+                // Payload format is a two-line text record consumed by the companion tool.
+                val records = mutableListOf<NdefRecord>()
+                records.add(NdefRecord.createTextRecord(
+                    null,
+                    "SPOOL:${nfcTagViewModel.spoolId}\nFILAMENT:${nfcTagViewModel.filamentId}"
+                ))
+                if (!url.isNullOrBlank() && nfcTagViewModel.spoolId != -1) {
+                    try {
+                        val spoolmanDeepLink = "$url/spool/show/${nfcTagViewModel.spoolId}"
+                        records.add(NdefRecord.createUri(spoolmanDeepLink))
+                    } catch (e: IllegalArgumentException) {
+                        Log.e("NFC", "Failed to create URI record for: $url/spool/view/${nfcTagViewModel.spoolId}", e)
+                    }
+                }
+                val msg = NdefMessage(records.toTypedArray())
+
                 // Some tags are not NDEF-formatted; guard against null tech.
                 val ndef = Ndef.get(tag)
                 if (ndef == null) {
