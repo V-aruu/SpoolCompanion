@@ -97,20 +97,37 @@ class MainActivity : ComponentActivity() {
             val tag: Tag = IntentCompat.getParcelableExtra(
                 intent,
                 NfcAdapter.EXTRA_TAG,
-                Parcelable::class.java
-            ) as Tag
+                Tag::class.java
+            ) ?: return
+
             if (nfcTagViewModel.isDialogShown) {
-                Log.w(
-                    "NFC",
-                    "SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId}"
-                )
+                val url = nfcTagViewModel.spoolmanUrl
+                val writeUrlToNfc = nfcTagViewModel.addUrlToNfc && !url.isNullOrBlank()
+                Log.w("NFC", buildString {
+                    append("SPOOL:${nfcTagViewModel.spoolId} | FILAMENT:${nfcTagViewModel.filamentId}")
+                    if (url.isNullOrBlank()) {
+                        append(" | no URL available")
+                    } else {
+                        append(" | SPOOLMANURL:$url | ADDNFC:$writeUrlToNfc")
+                    }
+                })
+                
                 // Payload format is a two-line text record consumed by the companion tool.
-                val msg = NdefMessage(
-                    NdefRecord.createTextRecord(
-                        null,
-                        "SPOOL:${nfcTagViewModel.spoolId}\nFILAMENT:${nfcTagViewModel.filamentId}"
-                    )
-                )
+                val records = mutableListOf<NdefRecord>()
+                records.add(NdefRecord.createTextRecord(
+                    null,
+                    "SPOOL:${nfcTagViewModel.spoolId}\nFILAMENT:${nfcTagViewModel.filamentId}"
+                ))
+                if (writeUrlToNfc && nfcTagViewModel.spoolId != -1) {
+                    try {
+                        val spoolmanDeepLink = "$url/spool/show/${nfcTagViewModel.spoolId}"
+                        records.add(NdefRecord.createUri(spoolmanDeepLink))
+                    } catch (e: IllegalArgumentException) {
+                        Log.e("NFC", "Failed to create URI record for: $url/spool/show/${nfcTagViewModel.spoolId}", e)
+                    }
+                }
+                val msg = NdefMessage(records.toTypedArray())
+
                 // Some tags are not NDEF-formatted; guard against null tech.
                 val ndef = Ndef.get(tag)
                 if (ndef == null) {
