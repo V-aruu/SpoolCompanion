@@ -31,6 +31,11 @@ class NfcTagViewModel(application: Application) : AndroidViewModel(application) 
             val sharedPrefs = getApplication<Application>().getSharedPreferences("settings", Context.MODE_PRIVATE)
             return sharedPrefs.getString("spoolman_url", null)
         }
+    val addUrlToNfc: Boolean
+        get() {
+            val sharedPrefs = getApplication<Application>().getSharedPreferences("settings", Context.MODE_PRIVATE)
+            return sharedPrefs.getBoolean("spoolman_nfc_url", false)
+        }
 }
 
 // Parsed tag payload + tag UID for the read dialog.

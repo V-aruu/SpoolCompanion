@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,8 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
     val sharedPrefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val spoolmanUrlFromPrefs = sharedPrefs.getString("spoolman_url", "")
     val spoolmanUrl = remember { mutableStateOf(spoolmanUrlFromPrefs) }
+    val spoolmanNfcUrlFromPrefs = sharedPrefs.getBoolean("spoolman_nfc_url", false)
+    val spoolmanNfcUrl = remember { mutableStateOf(spoolmanNfcUrlFromPrefs) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var isSortMenuExpanded by remember { mutableStateOf(false) }
     // Restore sort preference on app launch; fall back to Remaining when value is missing/invalid.
@@ -158,11 +162,13 @@ fun SpoolCompanionApp(nfcTagViewModel: NfcTagViewModel) {
     if (showSettingsDialog) {
         SettingsDialog(
             spoolmanUrl = spoolmanUrl,
+            spoolmanNfcUrl = spoolmanNfcUrl,
             onDismiss = { showSettingsDialog = false },
             onConfirm = {
                 // Save the cleaned base URL; SpoolApi appends "/api/v1/".
                 sharedPrefs.edit {
                     putString("spoolman_url", spoolmanUrl.value)
+                    putBoolean("spoolman_nfc_url", spoolmanNfcUrl.value)
                     apply()
                 }
                 showSettingsDialog = false
@@ -183,6 +189,7 @@ private fun android.content.SharedPreferences.readSortOption(): SortOption {
 @Composable
 fun SettingsDialog(
     spoolmanUrl: MutableState<String?>,
+    spoolmanNfcUrl: MutableState<Boolean>,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -222,6 +229,16 @@ fun SettingsDialog(
                     maxLines = 1,
                     singleLine = true,
                     placeholder = { Text(text = "http://0.0.0.0:7912/") })
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = spoolmanNfcUrl.value,
+                        onCheckedChange = { spoolmanNfcUrl.value = it }
+                    )
+                    Text(text = "Add URL to NFC")
+                }
             }
         }
     )
